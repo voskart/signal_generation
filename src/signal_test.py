@@ -27,7 +27,7 @@ def main():
     sig = Signal()
     futures_data = list(sig.get_futures_data())
     df = pd.DataFrame(futures_data)
-    df.to_csv('../data/jan_data.csv')
+    df.to_csv('./data/jan_data.csv')
 
 if __name__ == '__main__':
     main()
