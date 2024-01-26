@@ -22,12 +22,21 @@ class Signal():
             })
         except CollectionInvalid as e:
             raise e
+        
+    def get_options_data(self):
+        try:
+            return self.db.options.find()
+        except CollectionInvalid as e:
+            raise e
     
 def main():
     sig = Signal()
     futures_data = list(sig.get_futures_data())
     df = pd.DataFrame(futures_data)
     df.to_csv('./data/jan_data.csv')
+    # options_data = list(sig.get_options_data())
+    # df = pd.DataFrame(options_data)
+    # print(df)
 
 if __name__ == '__main__':
     main()
