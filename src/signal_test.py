@@ -2,6 +2,9 @@ from db_connection import MongoConnection
 from pymongo.errors import ConnectionFailure, CollectionInvalid
 import datetime as dt
 import pandas as pd
+import os
+from dotenv import load_dotenv
+from velodata import lib as velo
 
 class Signal():
     
@@ -9,6 +12,7 @@ class Signal():
 
     def __init__(self) -> None:
         try:
+            load_dotenv()
             mc = MongoConnection()
             self.db = mc.client['velodata']
         except ConnectionFailure as e:
@@ -24,19 +28,19 @@ class Signal():
             raise e
         
     def get_options_data(self):
-        try:
-            return self.db.options.find()
-        except CollectionInvalid as e:
-            raise e
+        client = velo.client(os.environ.get('VELO_API'))
+        print(client.get_term_structure(coins=['BTC']))
+
     
 def main():
     sig = Signal()
-    futures_data = list(sig.get_futures_data())
-    df = pd.DataFrame(futures_data)
-    df.to_csv('./data/jan_data.csv')
+    # futures_data = list(sig.get_futures_data())
+    # df = pd.DataFrame(futures_data)
+    # df.to_csv('./data/jan_data.csv')
     # options_data = list(sig.get_options_data())
     # df = pd.DataFrame(options_data)
     # print(df)
+    sig.get_options_data()
 
 if __name__ == '__main__':
     main()
