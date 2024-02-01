@@ -34,9 +34,9 @@ class Signal():
     
 def main():
     sig = Signal()
-    futures_data = list(sig.get_futures_data())
+    futures_data = list(sig.get_futures_data(product='BTCUSDT'))
     df = pd.DataFrame(futures_data)
-    df.to_csv('./data/jan_data.csv')
+    df.to_csv('./data/jan_data_btc.csv')
     # options_data = list(sig.get_options_data())
     # df = pd.DataFrame(options_data)
     # print(df)

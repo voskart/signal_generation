@@ -21,8 +21,8 @@ def main():
     mongoConnection = MongoConnection()
     db = mongoConnection.client['velodata']
     print(f'Collections: {db.list_collection_names()}')
-    print(db.futures.find_one())
-    print(db.spot.find_one())
+    # print(db.futures.find_one())
+    # print(db.options.find_one())
 
 
 
