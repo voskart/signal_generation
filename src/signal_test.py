@@ -9,6 +9,7 @@ from scipy import stats
 from dotenv import load_dotenv
 from velodata import lib as velo
 from backtest import Backtest
+from discord import send_msg
 
 class Signal():
     
@@ -41,7 +42,6 @@ class Signal():
         end = start + window_size
         max_increase_tau = {'tau': 0, 'range_low':0, 'range_high':0, 'oi_difference':0}
         max_decrease_tau = {'tau': 0, 'range_low':0, 'range_high':0, 'oi_difference':0}
-        print(len(group))
         # calcuate tau, calculate OI increase for those with positive tau, calculate funding and premium avg for the periods
         rows = []
         iterations = 1
@@ -95,6 +95,8 @@ def main():
     df_signals, df_data = sig.identify_signals()
     backtest = Backtest(df_signals, df_data)
     df = backtest.get_returns()
+    send_msg(df)
+    
 
 if __name__ == '__main__':
     main()
