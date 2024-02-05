@@ -1,12 +1,14 @@
 from db_connection import MongoConnection
 from pymongo.errors import ConnectionFailure, CollectionInvalid
 import datetime as dt
+from datetime import timedelta
 import polars as pl
 import os
 import time
 from scipy import stats
 from dotenv import load_dotenv
 from velodata import lib as velo
+from backtest import Backtest
 
 class Signal():
     
@@ -39,9 +41,10 @@ class Signal():
         end = start + window_size
         max_increase_tau = {'tau': 0, 'range_low':0, 'range_high':0, 'oi_difference':0}
         max_decrease_tau = {'tau': 0, 'range_low':0, 'range_high':0, 'oi_difference':0}
-
+        print(len(group))
         # calcuate tau, calculate OI increase for those with positive tau, calculate funding and premium avg for the periods
         rows = []
+        iterations = 1
         while end < len(group):
             df_cut = group[start:end].with_row_index()
             tau_oi = stats.kendalltau(df_cut['index'], df_cut['dollar_open_interest_close'])
@@ -50,6 +53,7 @@ class Signal():
                 if max_decrease_tau['tau'] > tau_oi.statistic:
                     max_decrease_tau = {'tau': tau_oi.statistic, 'range_low': start, 'range_high': end}
             else:
+                max_increase_tau = {'tau': tau_oi.statistic, 'range_low': start, 'range_high': end}
                 # get mean premium for period
                 premium = df_cut['premium'].mean()
                 # get mean funding for period
@@ -57,10 +61,9 @@ class Signal():
                 # OI increase
                 oi_increase = df_cut[-1]['dollar_open_interest_close']-df_cut[1]['dollar_open_interest_close']
                 rows.append({"Currency": group['product'][0], "Start_Date": group[max_increase_tau['range_low']].select(pl.col('time')).item(), "End_Date": group[max_increase_tau['range_high']].select(pl.col('time')).item(), "TAU_OI": tau_oi.statistic, "TAU_Price": tau_price.statistic, "Funding": funding, "Premium": premium})
-                max_increase_tau = {'tau': tau_oi.statistic, 'range_low': start, 'range_high': end}
+                # print(group[max_increase_tau['range_low']].select(pl.col('time')).item(), group[max_increase_tau['range_high']].select(pl.col('time')).item(), max_increase_tau['range_low'], max_increase_tau['range_high'])
             start += step
             end += step
-        print(rows)
         return(pl.DataFrame(rows))
     
     def get_returns(self, df):
@@ -75,15 +78,16 @@ class Signal():
         df = df.filter(pl.col('search_resolution')==1)
         df = df.unique(subset='time')
         df = df.sort(by='time')
+        # filter out bnb
+        df = df.filter(pl.col('product')!='BNBUSDT')
         df_processed = df.group_by('product').apply(function=self.get_signals)
-        print(df_processed)
         df_up = df_processed.filter((pl.col('TAU_Price')>0.6) & (pl.col('TAU_OI')>0.6) & ((pl.col('Funding')<-0.0001) | (pl.col('Premium')<0)))
         end = time.time()
         print(f"{df.group_by('product').count()}")
         print(f"Range from: {df.sort(by='time')['time'][0]} to : {df.sort(by='time')['time'][-1]}")
         print(f"Number of signals: {len(df_up)}")
         print(f"Elapsed time to run analysis: {end - start}")
-        # df_up.map_rows(lambda t: df.filter(pl.col('time')==t['End_Date']))
+        return df_up, df
     
 def main():
     sig = Signal()
@@ -95,7 +99,9 @@ def main():
     # options_data = list(sig.get_options_data())
     # df = pl.DataFrame(options_data)
     # print(d)
-    sig.identify_signals()
+    df_signals, df_data = sig.identify_signals()
+    backtest = Backtest(df_signals, df_data)
+    backtest.get_returns()
 
 if __name__ == '__main__':
     main()
