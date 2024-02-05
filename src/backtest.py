@@ -10,12 +10,11 @@ class Backtest():
     # get end date for each row, get price 12hr from signal
     def get_returns(self):
         # for each signal check price right after end_date
-        prices = self.signals.apply(function=self.get_price)
-        print(prices)
+        return(self.signals.apply(function=self.get_price))
 
     def get_price(self, df, hours=[4, 8, 12, 24, 48]):
         price = self.data.filter((pl.col('product') == df[0]) & (pl.col('time')>=df[2]))["close_price"]
-        # print(f"Currency: {df[0]}, from: {df[1]} to {df[2]}")
+        print(f"Currency: {df[0]}, from: {df[1]} to {df[2]}")
         prices = []
         for h in hours:
             newtime = df[2]+timedelta(hours=h)
@@ -23,7 +22,7 @@ class Backtest():
             if newtime > dt.datetime.now():
                 print("Time would be in the future!")
                 break
-            # print(f"Price right at signal time: {price[0]}, price {h} hours after: {newprice[0]}, price change: {1-price[0]/newprice[0]:2f}")
+            print(f"Price right at signal time: {price[0]}, price {h} hours after: {newprice[0]}, price change: {1-price[0]/newprice[0]:2f}")
             prices.append(newprice[0])       
         return(f"Initial: {price[0]}", prices)
 

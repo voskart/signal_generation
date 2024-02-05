@@ -66,11 +66,6 @@ class Signal():
             end += step
         return(pl.DataFrame(rows))
     
-    def get_returns(self, df):
-        # print(df['Currency'], df['End_Date'])
-        # print(df.filter(pl.col('time')==row['End_Date']))
-        pass
-
     def identify_signals(self, tau_oi=0.7, price_oi=0.7):
         # get minute data
         start = time.time()
@@ -96,12 +91,10 @@ def main():
     # god knows where this column is coming from (probably mongo db id that we don't care about but it kills the script)
     # df = df.drop("_id")
     # df.write_parquet(f"./data/futures_data_{dt.date.today()}.parquet")
-    # options_data = list(sig.get_options_data())
-    # df = pl.DataFrame(options_data)
     # print(d)
     df_signals, df_data = sig.identify_signals()
     backtest = Backtest(df_signals, df_data)
-    backtest.get_returns()
+    df = backtest.get_returns()
 
 if __name__ == '__main__':
     main()
