@@ -56,11 +56,11 @@ class Signal():
                 funding = df_cut['funding_rate'].mean()
                 # OI increase
                 oi_increase = df_cut[-1]['dollar_open_interest_close']-df_cut[1]['dollar_open_interest_close']
-                # print(f"'Currency': {group['product'][0]}, 'Start_Date': {group[max_increase_tau['range_low']]['time']}, 'End_Date': {group[max_increase_tau['range_high']]['time']}, 'TAU_OI': {tau_oi.statistic}, 'TAU_Price': {tau_price.statistic}, 'Funding': {funding}, 'Premium': {premium}")
-                rows.append({"Currency": group['product'][0], "Start_Date": group[max_increase_tau['range_low']]['time'], "End_Date": group[max_increase_tau['range_high']]['time'], "TAU_OI": tau_oi.statistic, "TAU_Price": tau_price.statistic, "Funding": funding, "Premium": premium})
+                rows.append({"Currency": group['product'][0], "Start_Date": group[max_increase_tau['range_low']].select(pl.col('time')).item(), "End_Date": group[max_increase_tau['range_high']].select(pl.col('time')).item(), "TAU_OI": tau_oi.statistic, "TAU_Price": tau_price.statistic, "Funding": funding, "Premium": premium})
                 max_increase_tau = {'tau': tau_oi.statistic, 'range_low': start, 'range_high': end}
             start += step
             end += step
+        print(rows)
         return(pl.DataFrame(rows))
     
     def get_returns(self, df):
@@ -83,7 +83,7 @@ class Signal():
         print(f"Range from: {df.sort(by='time')['time'][0]} to : {df.sort(by='time')['time'][-1]}")
         print(f"Number of signals: {len(df_up)}")
         print(f"Elapsed time to run analysis: {end - start}")
-        df_up.map_rows(lambda t: df.filter(pl.col('time')==t['End_Date']))
+        # df_up.map_rows(lambda t: df.filter(pl.col('time')==t['End_Date']))
     
 def main():
     sig = Signal()
@@ -93,8 +93,8 @@ def main():
     # df = df.drop("_id")
     # df.write_parquet(f"./data/futures_data_{dt.date.today()}.parquet")
     # options_data = list(sig.get_options_data())
-    # df = pd.DataFrame(options_data)
-    # print(df)
+    # df = pl.DataFrame(options_data)
+    # print(d)
     sig.identify_signals()
 
 if __name__ == '__main__':
