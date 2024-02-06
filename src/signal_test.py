@@ -76,13 +76,20 @@ class Signal():
         # filter out bnb
         df = df.filter(pl.col('product')!='BNBUSDT')
         df_processed = df.group_by('product').apply(function=self.get_signals)
-        df_up = df_processed.filter((pl.col('TAU_Price')>0.6) & (pl.col('TAU_OI')>0.6) & ((pl.col('Funding')<-0.0001) | (pl.col('Premium')<0)))
+        # filter for long signals, price constant, oi increase, funding negative
+        df_up = df_processed.filter((pl.col('TAU_OI')>0.6) & ((pl.col('Funding')<-0.0001) | (pl.col('Premium')<0)))
+        df_up = df_up.with_columns(pl.lit('up').alias('Signal'))
+        # filter for short signals, price constant, oi increase, funding negative
+        df_down = df_processed.filter((pl.col('TAU_OI')>0.6) & ((pl.col('Funding')>0.0001) | (pl.col('Premium')>0)))
+        df_down = df_down.with_columns(pl.lit('down').alias('Signal'))
         end = time.time()
+        # combine dfs
+        df_combined = pl.concat([df_up, df_down])
         print(f"{df.group_by('product').count()}")
         print(f"Range from: {df.sort(by='time')['time'][0]} to : {df.sort(by='time')['time'][-1]}")
         print(f"Number of signals: {len(df_up)}")
         print(f"Elapsed time to run analysis: {end - start}")
-        return df_up, df
+        return df_combined, df
     
 def main():
     sig = Signal()
@@ -91,7 +98,6 @@ def main():
     # god knows where this column is coming from (probably mongo db id that we don't care about but it kills the script)
     # df = df.drop("_id")
     # df.write_parquet(f"./data/futures_data_{dt.date.today()}.parquet")
-    # print(d)
     df_signals, df_data = sig.identify_signals()
     backtest = Backtest(df_signals, df_data)
     df = backtest.get_returns()
