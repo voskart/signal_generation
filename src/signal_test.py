@@ -100,8 +100,10 @@ def main():
     # df.write_parquet(f"./data/futures_data_{dt.date.today()}.parquet")
     df_signals, df_data = sig.identify_signals()
     backtest = Backtest(df_signals, df_data)
-    df = backtest.get_returns()
-    send_msg(df)
+    # df = backtest.get_returns()
+    # filter latest signals, i.e., the ones that are 48h or fresher
+    df_signals_newest = df_signals.filter(pl.col('End_Date')>dt.datetime.now()-timedelta(hours=48))
+    send_msg(df_signals_newest)
     
 
 if __name__ == '__main__':

@@ -1,6 +1,8 @@
 import requests
 import os
+import datetime as dt
 import polars as pl
+import json
 from dotenv import load_dotenv
 
 
@@ -12,14 +14,27 @@ def send_msg(content: pl.DataFrame):
         "title": "Signal"
     }
 
-    json_dump = content.write_json()
+    entries = []
+    for sig in content.rows():
+        for i, item in enumerate(sig):
+            entry = {}
+            entry["name"] = content.columns[i]
+            if type(item) == dt.datetime:
+                entry["value"] = item.strftime("%m/%d/%Y %H:%M:%S")
+            else:
+                entry["value"] = str(item)
+            if i != 0:
+                entry["inline"] = "true"
+            entries.append(entry)
 
     data = {
-        "content": json_dump,
         "username": "custom username",
         "embeds": [
-            embed
-        ],
+            {
+                "title": "Signals",
+                "fields": entries
+            }
+        ]
     }
 
     headers = {
