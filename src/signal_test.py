@@ -103,7 +103,9 @@ def main():
     # df = backtest.get_returns()
     # filter latest signals, i.e., the ones that are 48h or fresher
     df_signals_newest = df_signals.filter(pl.col('End_Date')>dt.datetime.now()-timedelta(hours=48))
-    send_msg(df_signals_newest)
+    # send latest signal per currency
+    latest_signal_by_coin = df_signals_newest.group_by(pl.col('Currency')).agg(pl.all().sort_by('End_Date').last())
+    send_msg(latest_signal_by_coin)
     
 
 if __name__ == '__main__':
