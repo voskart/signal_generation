@@ -30,7 +30,7 @@ class Signal():
             })
         except CollectionInvalid as e:
             raise e
-        
+    
     def get_options_data(self):
         client = velo.client(os.environ.get('VELO_API'))
         print(client.get_term_structure(coins=['BTC']))
@@ -93,19 +93,24 @@ class Signal():
     
 def main():
     sig = Signal()
-    # futures_data = list(sig.get_futures_data())
-    # df = pl.DataFrame(futures_data)
-    # god knows where this column is coming from (probably mongo db id that we don't care about but it kills the script)
-    # df = df.drop("_id")
-    # df.write_parquet(f"./data/futures_data_{dt.date.today()}.parquet")
-    df_signals, df_data = sig.identify_signals()
-    backtest = Backtest(df_signals, df_data)
-    # df = backtest.get_returns()
-    # filter latest signals, i.e., the ones that are 48h or fresher
-    df_signals_newest = df_signals.filter(pl.col('End_Date')>dt.datetime.now()-timedelta(hours=48))
-    # send latest signal per currency
-    latest_signal_by_coin = df_signals_newest.group_by(pl.col('Currency')).agg(pl.all().sort_by('End_Date').last())
-    send_msg(latest_signal_by_coin)
+    if not os.path.exists(f"./data/futures_data_{dt.date.today()}.parquet"):
+        futures_data = list(sig.get_futures_data())
+        df = pl.DataFrame(futures_data)
+        # god knows where this column is coming from (probably mongo db id that we don't care about but it kills the script)
+        df = df.drop("_id")
+        df.write_parquet(f"./data/futures_data_{dt.date.today()}.parquet")
+    else:   
+        df_signals, df_data = sig.identify_signals()
+        # backtest = Backtest(df_signals, df_data)
+        # df = backtest.get_returns()
+        # filter latest signals, i.e., the ones that are 48h or fresher
+        df_signals_newest = df_signals.filter(pl.col('End_Date')>dt.datetime.now()-timedelta(hours=48))
+        # send latest signal per currency
+        latest_signal_by_coin = df_signals_newest.group_by(pl.col('Currency')).agg(pl.all().sort_by('End_Date').last())
+        # write signals to db
+        client = MongoConnection(False)
+        client.insert_signals(latest_signal_by_coin)
+        # send_msg(latest_signal_by_coin)
     
 
 if __name__ == '__main__':
