@@ -1,6 +1,7 @@
 import pymongo
 import os
 import polars as pl
+from discord import send_msg
 from dotenv import load_dotenv
 
 class MongoConnection():
@@ -30,7 +31,17 @@ class MongoConnection():
         try:
             db = self.client.get_database("data")
             for signal in signals.to_dicts():
-                db.signals.update_one(signal, signal, upsert=True)
+                _sig = db.signals.find_one(
+                    {
+                        "Currency": signal["Currency"],
+                        "End_Date": signal["End_Date"]
+                    }
+                )
+                if not _sig:
+                    send_msg(signal)
+                    db.signals.insert_one(signal)
+                else:
+                    print("Signal already inserted, skipping")
         except:
             raise(NameError('Not Found'))
 
@@ -38,8 +49,6 @@ class MongoConnection():
 def main():
     mongoConnection = MongoConnection()
     db = mongoConnection.get_database("data")
-    # print(db.futures.find_one())
-    # print(db.options.find_one())
 
 
 

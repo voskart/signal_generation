@@ -9,7 +9,6 @@ from scipy import stats
 from dotenv import load_dotenv
 from velodata import lib as velo
 from backtest import Backtest
-from discord import send_msg
 
 class Signal():
     
@@ -110,8 +109,6 @@ def main():
         # write signals to db
         client = MongoConnection(False)
         client.insert_signals(latest_signal_by_coin)
-        # send_msg(latest_signal_by_coin)
-    
 
 if __name__ == '__main__':
     main()

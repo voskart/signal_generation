@@ -6,7 +6,7 @@ import json
 from dotenv import load_dotenv
 
 
-def send_msg(content: pl.DataFrame):
+def send_msg(signal):
     load_dotenv()
     url = os.environ.get('DISCORD_WEBHOOK')
     embed = {
@@ -15,17 +15,16 @@ def send_msg(content: pl.DataFrame):
     }
 
     entries = []
-    for sig in content.rows():
-        for i, item in enumerate(sig):
-            entry = {}
-            entry["name"] = content.columns[i]
-            if type(item) == dt.datetime:
-                entry["value"] = item.strftime("%m/%d/%Y %H:%M:%S")
-            else:
-                entry["value"] = str(item)
-            if i != 0:
-                entry["inline"] = "true"
-            entries.append(entry)
+    for i, item in enumerate(signal):
+        entry = {}
+        entry["name"] = item
+        if type(signal[item]) == dt.datetime:
+            entry["value"] = signal[item].strftime("%m/%d/%Y %H:%M:%S")
+        else:
+            entry["value"] = str(signal[item])
+        if i != 0:
+            entry["inline"] = "true"
+        entries.append(entry)
 
     data = {
         "username": "custom username",
